@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import tensorflow as tf
 from tensorflow import keras
 
@@ -85,7 +85,7 @@ test = []
 
 for i in range(12):
     test.append(i)
-test = [test,test]
+test = [test]
 test = np.array(test)
 result = model.predict(test)
 print(result)
@@ -96,10 +96,31 @@ model.summary()
 reader = tf.train.NewCheckpointReader('./checkpoints/my_checkpoint')
 all_variables = reader.get_variable_to_shape_map()
 
+weights = {}
+bias = {}
 for key in all_variables:
         if 'layer_with_weights' in key and 'VARIABLE_VALUE' in key and not 'optimizer' in key:
-            print("tensor_name: ", key)
-            print(reader.get_tensor(key))
+            #print("tensor_name: ", key)
+            #print(reader.get_tensor(key))
+            keys = key.split('/')
+            index = int(keys[0][-1])
+            if keys[1] == 'kernel':
+                weights[index] = reader.get_tensor(key) 
+            elif keys[1] == 'bias':
+                bias[index] = reader.get_tensor(key) 
+
+Sum = [0,0,0,0]
+for i in range(12):
+    Sum[int(i/3)] += (weights[int(i/3)][i%3]*test[0][i])
+
+for i in range(4):
+    Sum[i] += bias[i]
+    #print(Sum[i])
+
+A = Sum[0]*weights[4][0] + Sum[1]*weights[4][1] + bias[4]
+B = Sum[2]*weights[5][0] + Sum[3]*weights[5][1] + bias[5]
+
+print(A*weights[6][0] + B*weights[6][1] + bias[6])
 
 #for tv in tf.trainable_variables():
 #        print (tv.name)
